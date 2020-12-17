@@ -1,0 +1,12 @@
+{
+  "name": "unity.waypoint",
+  "displayName": "Waypoint",
+  "version": "0.0.1",
+  "unity": "2018.3",
+  "description": "",
+  "keywords": [
+    "unity"
+  ],
+  "category": "Unity",
+  "repoPackagePath": "../UnityPackages"
+}

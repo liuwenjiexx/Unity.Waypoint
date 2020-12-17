@@ -1,0 +1,17 @@
+{
+    "name": "Unity.WaypointPath.Editor",
+    "references": [
+        "GUID:f5459b834918d474dac496b01f5b894a"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": []
+}
