@@ -18,6 +18,12 @@
 
 
 
+## Event
+
+路径触发事件，触发事件需要`WaypointTracker`组件
+
+
+
 ## Branch
 
 测试分支功能

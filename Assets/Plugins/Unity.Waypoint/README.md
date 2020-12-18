@@ -24,6 +24,44 @@ Unity 路径编辑器
 
 
 
+## 事件
+
+触发事件需要 `WaypointTracker` 组件
+
+### 事件结构
+
+- Name
+
+  事件名称
+
+- Type
+
+  事件值类型，支持（String,Int,Float,Object)
+
+- Source
+
+  触发事件的源
+
+- Path
+
+  触发事件的路径
+
+### 全局事件
+
+1. `shift + control + 鼠标靠近路径` 添加全局事件点
+2. Event 属性面板显示当前事件值
+3. `WaypointTracker` 到达 `Distance` 触发
+
+### 点事件
+
+1. 选中点
+2. 编辑 `Waypoint/Events` 属性面板值
+3. `WaypointTracker` 到达该点时触发
+
+
+
+
+
 ## 路径状态
 
 使用`WaypointTracker`组件获取路径中状态，包含（进度，起点距离）

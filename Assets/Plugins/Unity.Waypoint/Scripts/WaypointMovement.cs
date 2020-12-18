@@ -8,7 +8,7 @@ namespace UnityEngine.Waypoints {
     {
         public WaypointPath path;
         public bool playOnAwake = true;
-        public float speed;
+        public float speed=5;
         public bool resetPosition = true;
         private bool isPlaying;
         private float dist;

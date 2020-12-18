@@ -150,33 +150,41 @@ namespace UnityEngine.Waypoints
 
         void TriggerEvent(WaypointPath path, Waypoint point, WaypointEventInfo eventInfo)
         {
-            if (string.IsNullOrEmpty(eventInfo.Function))
+            if (string.IsNullOrEmpty(eventInfo.name))
                 return;
 
             Current = this;
             CurrentEvent = eventInfo;
-            if (eventInfo.valueType != TypeCode.Empty)
+            WaypointEvent @event = new WaypointEvent()
             {
-                object value = null;
-                switch (eventInfo.valueType)
-                {
-                    case TypeCode.Single:
-                        value = eventInfo.floatValue;
-                        break;
-                    case TypeCode.Int32:
-                        value = eventInfo.intValue;
-                        break;
-                    case TypeCode.String:
-                        value = eventInfo.stringValue;
-                        break;
+                Path = path,
+                EventInfo = eventInfo,
+                Point = point,
+                Source = transform
+            };
+            path.OnEvent(@event);
+            //if (eventInfo.valueType != TypeCode.Empty)
+            //{
+            //    object value = null;
+            //    switch (eventInfo.valueType)
+            //    {
+            //        case TypeCode.Single:
+            //            value = eventInfo.floatValue;
+            //            break;
+            //        case TypeCode.Int32:
+            //            value = eventInfo.intValue;
+            //            break;
+            //        case TypeCode.String:
+            //            value = eventInfo.stringValue;
+            //            break;
 
-                }
-                path.SendMessage(eventInfo.Function, value, SendMessageOptions.RequireReceiver);
-            }
-            else
-            {
-                path.SendMessage(eventInfo.Function, SendMessageOptions.RequireReceiver);
-            }
+            //    }
+            //    path.SendMessage(eventInfo.Function, value, SendMessageOptions.RequireReceiver);
+            //}
+            //else
+            //{
+            //    path.SendMessage(eventInfo.Function, SendMessageOptions.RequireReceiver);
+            //}
         }
 
 

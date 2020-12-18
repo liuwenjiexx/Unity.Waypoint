@@ -23,6 +23,8 @@ namespace UnityEngine.Waypoints
         public bool closed;
         public bool unlocked;
 
+        [NonSerialized]
+        public List<Action<WaypointEvent>> listeners = new List<Action<WaypointEvent>>();
 
         private static WaypointPath main;
 
@@ -361,9 +363,9 @@ namespace UnityEngine.Waypoints
             if (string.IsNullOrEmpty(point.id))
             {
                 point.id = System.Guid.NewGuid().ToString("N");
-//#if UNITY_EDITOR
-//                EditorUtility.SetDirty(this);
-//#endif
+                //#if UNITY_EDITOR
+                //                EditorUtility.SetDirty(this);
+                //#endif
             }
             return point.id;
         }
@@ -421,7 +423,26 @@ namespace UnityEngine.Waypoints
             return true;
         }
 
-   
+
+        public void AddListener(Action<WaypointEvent> l)
+        {
+            listeners.Add(l);
+        }
+
+        public void RemoveListener(Action<WaypointEvent> l)
+        {
+            listeners.Remove(l);
+        }
+
+        public void OnEvent(WaypointEvent @event)
+        {
+
+            foreach (var l in listeners)
+            {
+                l(@event);
+            }
+        }
+
 
         class EventInfoComparer : IComparer<WaypointEventInfo>
         {
@@ -452,6 +473,12 @@ namespace UnityEngine.Waypoints
 
     }
 
-
+    public class WaypointEvent
+    {
+        public WaypointPath Path { get; set; }
+        public Waypoint Point { get; set; }
+        public WaypointEventInfo EventInfo { get; set; }
+        public Transform Source { get; set; }
+    }
 
 }

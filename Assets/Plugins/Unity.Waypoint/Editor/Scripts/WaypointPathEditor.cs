@@ -34,7 +34,10 @@ namespace UnityEditor.Waypoints
 
         private bool eventPointDrag;
 
-        private static string DefaultEventName;
+        private string DefaultEventName
+        {
+            get => string.Empty;
+        }
         private static Type defaultEventType;
         private static bool isInit;
 
@@ -53,26 +56,26 @@ namespace UnityEditor.Waypoints
                 return;
             isInit = true;
             Debug.Log("init");
-            foreach (var type in AppDomain.CurrentDomain.GetAssemblies()
-               .Referenced(new Assembly[] { typeof(WaypointEventAttribute).Assembly })
-               .SelectMany(o => o.GetTypes()))
-            {
-                if (type.IsDefined(typeof(WaypointEventAttribute), false))
-                {
-                    defaultEventType = type;
-                    break;
-                }
-            }
+            //foreach (var type in AppDomain.CurrentDomain.GetAssemblies()
+            //   .Referenced(new Assembly[] { typeof(WaypointEventAttribute).Assembly })
+            //   .SelectMany(o => o.GetTypes()))
+            //{
+            //    if (type.IsDefined(typeof(WaypointEventAttribute), false))
+            //    {
+            //        defaultEventType = type;
+            //        break;
+            //    }
+            //}
 
-            if (defaultEventType != null)
-            {
-                var attrs = defaultEventType.GetCustomAttributes(typeof(System.ComponentModel.DefaultValueAttribute), true);
-                if (attrs != null && attrs.Length > 0)
-                {
-                    var valueAttr = attrs[0] as System.ComponentModel.DefaultValueAttribute;
-                    DefaultEventName = valueAttr.Value as string;
-                }
-            }
+            //if (defaultEventType != null)
+            //{
+            //    var attrs = defaultEventType.GetCustomAttributes(typeof(System.ComponentModel.DefaultValueAttribute), true);
+            //    if (attrs != null && attrs.Length > 0)
+            //    {
+            //        var valueAttr = attrs[0] as System.ComponentModel.DefaultValueAttribute;
+            //        DefaultEventName = valueAttr.Value as string;
+            //    }
+            //}
         }
 
 
@@ -247,27 +250,37 @@ namespace UnityEditor.Waypoints
             using (var checker = new EditorGUI.ChangeCheckScope())
             {
                 GUIBranchs();
-                if (checker.changed)
+                if (selectedPointIndex >= 0)
                 {
-                    serializedObject.ApplyModifiedProperties();
-                    EditorUtility.SetDirty(Path);
-                }
-            }
-            if (selectedPointIndex >= 0)
-            {
 
-                GUILayout.Label("Waypoint");
-                var waypoint = Path.points[selectedPointIndex];
-                using (new GUILayout.HorizontalScope())
-                {
-                    GUILayout.Space(15);
-                    using (new GUILayout.VerticalScope())
+                    GUILayout.Label("Waypoint");
+                    var waypoint = Path.points[selectedPointIndex];
+                    using (new GUILayout.HorizontalScope())
                     {
-                        using (var changed = new EditorGUI.ChangeCheckScope())
+                        GUILayout.Space(15);
+                        using (new GUILayout.VerticalScope())
                         {
                             waypoint.position = EditorGUILayout.Vector3Field(new GUIContent("Position"), waypoint.position);
 
-                            GUILayout.Label("Events");
+                            EditorGUILayout.BeginFoldoutHeaderGroup(true, new GUIContent("Events"),
+                                menuAction: (r) =>
+                                {
+                                    GenericMenu menu = new GenericMenu();
+                                    menu.AddItem(new GUIContent("Add"), false, () =>
+                                    {
+                                        Undo.RecordObject(target, "Add Event");
+                                        if (waypoint.events == null)
+                                        {
+                                            waypoint.events = new List<WaypointEventInfo>();
+                                        }
+                                        var eventInfo = NewEventInfo(0, DefaultEventName);
+                                        waypoint.events.Add(eventInfo);
+                                        EditorUtility.SetDirty(target);
+                                    });
+                                    menu.ShowAsContext();
+                                });
+                            EditorGUILayout.EndFoldoutHeaderGroup();
+                            //GUILayout.Label("Events");
                             using (new GUILayout.HorizontalScope())
                             {
                                 GUILayout.Space(15);
@@ -278,64 +291,34 @@ namespace UnityEditor.Waypoints
                                     {
                                         for (int i = 0; i < waypoint.events.Count; i++)
                                         {
-                                            using (new GUILayout.HorizontalScope())
-                                            {
-                                                waypoint.events[i] = DrawEventInfo(waypoint.events[i]);
-                                                if (GUILayout.Button("Del"))
-                                                {
-                                                    waypoint.events.RemoveAt(i);
-                                                    i--;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    using (new GUILayout.HorizontalScope())
-                                    {
-                                        if (GUILayout.Button("Add"))
-                                        {
-                                            if (waypoint.events == null)
-                                            {
-                                                waypoint.events = new List<WaypointEventInfo>();
-
-                                            }
-                                            var eventInfo = NewEventInfo(0, DefaultEventName);
-                                            waypoint.events.Add(eventInfo);
-                                            EditorUtility.SetDirty(Path);
+                                            waypoint.events[i] = DrawEventInfo(waypoint.events, i);
                                         }
                                     }
 
                                 }
                             }
-                            if (changed.changed)
-                            {
-                                EditorUtility.SetDirty(Path);
-                            }
+
                         }
                     }
                 }
-            }
 
 
-            GUILayout.Label("Event");
+                GUILayout.Label("Event");
 
 
-            if (selectedEventIndex >= 0 && selectedEventIndex < Path.events.Count)
-            {
-                WaypointEventInfo eventInfo = Path.events[selectedEventIndex];
-
-                using (var changed = new EditorGUI.ChangeCheckScope())
+                if (selectedEventIndex >= 0 && selectedEventIndex < Path.events.Count)
                 {
-                    eventInfo = DrawEventInfo(eventInfo);
+                    EditorGUI.indentLevel++;
+                    Path.events[selectedEventIndex] = DrawEventInfo(Path.events, selectedEventIndex);
+                    EditorGUI.indentLevel--;
+                }
 
-                    if (changed.changed)
-                    {
-                        Undo.RecordObject(Path, "");
-                        Path.events[selectedEventIndex] = eventInfo;
-                        EditorUtility.SetDirty(Path);
-                    }
+                if (checker.changed)
+                {
+                    serializedObject.ApplyModifiedProperties();
+                    EditorUtility.SetDirty(Path);
                 }
             }
-
         }
 
         void CreateBranch()
@@ -435,43 +418,76 @@ namespace UnityEditor.Waypoints
         }
 
 
-
-        WaypointEventInfo DrawEventInfo(WaypointEventInfo eventInfo)
+        WaypointEventInfo DrawEventInfo(List<WaypointEventInfo> events, int index)
         {
+            WaypointEventInfo eventInfo = events[index];
+
+            EditorGUILayout.BeginFoldoutHeaderGroup(true, new GUIContent(events[index].name ?? ""),
+                menuAction: (r) =>
+                {
+                    GenericMenu menu = new GenericMenu();
+                    menu.AddItem(new GUIContent("Delete"), false, () =>
+                    {
+                        Undo.RecordObject(target, "Delete event");
+                        events.RemoveAt(index);
+
+                    });
+                    menu.ShowAsContext();
+                });
+            EditorGUILayout.EndFoldoutHeaderGroup();
+
             using (new GUILayout.VerticalScope())
             {
 
-                int funcIndex = -1;
+                eventInfo.name = EditorGUILayout.TextField("Name", eventInfo.name);
 
-                string[] displayNames = new string[] { "<None>" }.Concat(eventMethods.Select(o => o.Name + "(" + (o.GetParameters().Length > 0 ? o.GetParameters()[0].ParameterType.Name : "") + ")")).ToArray();
-                for (int i = 0; i < eventMethods.Length; i++)
+                if (Path.events == events)
                 {
-                    if (eventMethods[i].Name == eventInfo.Function)
-                    {
-                        funcIndex = i + 1;
-                        break;
-                    }
+                    eventInfo.distance = EditorGUILayout.FloatField("Distance", eventInfo.distance);
                 }
 
-                var newIndex = EditorGUILayout.Popup("Function", funcIndex, displayNames);
-                if (newIndex != funcIndex && newIndex != -1)
+                var valueTypes = new TypeCode[] { TypeCode.String, TypeCode.Int32, TypeCode.Single, TypeCode.Object };
+
+                int valueTypeIndex = Array.FindIndex(valueTypes, o => o == eventInfo.valueType);
+                var newIndex = EditorGUILayout.Popup("Type", valueTypeIndex, valueTypes.Select(o => o.ToString()).ToArray());
+                if (newIndex != valueTypeIndex)
                 {
-                    funcIndex = newIndex;
-                    if (funcIndex == 0)
-                    {
-                        eventInfo.Function = null;
-                        eventInfo.valueType = TypeCode.Empty;
-                    }
-                    else
-                    {
-                        var func = eventMethods[funcIndex - 1];
-                        eventInfo.Function = func.Name;
-                        if (func.GetParameters().Length > 0)
-                            eventInfo.valueType = Type.GetTypeCode(func.GetParameters()[0].ParameterType);
-                        else
-                            eventInfo.valueType = TypeCode.Empty;
-                    }
+                    eventInfo.valueType = valueTypes[newIndex];
                 }
+
+                //int funcIndex = -1;
+
+                //string[] displayNames = new string[] { "<None>" }.Concat(eventMethods.Select(o => o.Name + "(" + (o.GetParameters().Length > 0 ? o.GetParameters()[0].ParameterType.Name : "") + ")")).ToArray();
+                //for (int i = 0; i < eventMethods.Length; i++)
+                //{
+                //    if (eventMethods[i].Name == eventInfo.Function)
+                //    {
+                //        funcIndex = i + 1;
+                //        break;
+                //    }
+                //}
+
+                //var newIndex = EditorGUILayout.Popup("Function", funcIndex, displayNames);
+                //if (newIndex != funcIndex && newIndex != -1)
+                //{
+                //    funcIndex = newIndex;
+                //    if (funcIndex == 0)
+                //    {
+                //        eventInfo.Function = null;
+                //        eventInfo.valueType = TypeCode.Empty;
+                //    }
+                //    else
+                //    {
+                //        var func = eventMethods[funcIndex - 1];
+                //        eventInfo.Function = func.Name;
+                //        if (func.GetParameters().Length > 0)
+                //            eventInfo.valueType = Type.GetTypeCode(func.GetParameters()[0].ParameterType);
+                //        else
+                //            eventInfo.valueType = TypeCode.Empty;
+                //    }
+                //}
+
+
 
                 switch (eventInfo.valueType)
                 {
@@ -484,17 +500,23 @@ namespace UnityEditor.Waypoints
                     case TypeCode.String:
                         eventInfo.stringValue = EditorGUILayout.TextField("String", eventInfo.stringValue);
                         break;
+                    case TypeCode.Object:
+                        eventInfo.objectValue = EditorGUILayout.ObjectField("Object", eventInfo.objectValue, typeof(UnityEngine.Object), true);
+                        break;
                 }
             }
             return eventInfo;
         }
 
 
+
+
         WaypointEventInfo NewEventInfo(float dist, string eventName)
         {
             WaypointEventInfo eventInfo = new WaypointEventInfo();
             eventInfo.distance = dist;
-            eventInfo.Function = eventName;
+            eventInfo.name = eventName;
+            eventInfo.valueType = TypeCode.String;
             return eventInfo;
         }
         int AddEventPoint(float dist)
@@ -969,9 +991,9 @@ namespace UnityEditor.Waypoints
 
                     if ((path.visualFlags & WaypointPath.VisualFlags.EventName) != 0)
                     {
-                        if (!string.IsNullOrEmpty(eventInfo.Function))
+                        if (!string.IsNullOrEmpty(eventInfo.name))
                         {
-                            Handles.Label(point.position, eventInfo.Function);
+                            Handles.Label(point.position, eventInfo.name);
                         }
                         else
                         {
@@ -1132,11 +1154,11 @@ namespace UnityEditor.Waypoints
                 for (int i = 0; i < waypoint.events.Count; i++)
                 {
                     var eventInfo = waypoint.events[i];
-                    if (!string.IsNullOrEmpty(eventInfo.Function))
+                    if (!string.IsNullOrEmpty(eventInfo.name))
                     {
                         if (sb.Length > 0)
                             sb.Append(",");
-                        sb.Append(eventInfo.Function);
+                        sb.Append(eventInfo.name);
                     }
                 }
             }
