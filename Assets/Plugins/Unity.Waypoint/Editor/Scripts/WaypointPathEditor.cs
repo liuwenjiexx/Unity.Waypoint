@@ -340,12 +340,15 @@ namespace UnityEditor.Waypoints
 
         void CreateBranch()
         {
+
             GameObject go = new GameObject("Branch");
             go.transform.SetParent(Path.transform);
             go.transform.localPosition = Vector3.zero;
             go.transform.localEulerAngles = Vector3.zero;
             go.transform.localScale = Vector3.one;
             var newPath = go.AddComponent<WaypointPath>();
+
+            Undo.RecordObject(newPath, "");
             newPath.unlocked = true;
 
 
@@ -356,6 +359,8 @@ namespace UnityEditor.Waypoints
                 pointId = Path.GetWaypointId(selectedPointIndex)
             };
             joint.to.path = newPath;
+            Undo.RegisterCreatedObjectUndo(go, "Create Branch");
+            Undo.RecordObject(Path, "");
             Path.branchs.Add(joint);
             EditorUtility.SetDirty(target);
             selectedPointIndex = -1;
